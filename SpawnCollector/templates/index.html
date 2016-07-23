@@ -14,39 +14,55 @@
         }
 
         #map {
-            height: 100%;
+            height: 75%;
         }
     </style>
 </head>
 <body>
-
+    
     <div id="map"></div>
     <script>
         var map;
         var latitude = parseFloat("{{lat}}");
         var longitude = parseFloat("{{long}}");
-        var pokemon = {{pokemon|safe}};
-      function initMap() {
-        map = new google.maps.Map(document.getElementById('map'), {
-            center: { lat: latitude, lng: longitude },
-          zoom: 16
-        });
-        var markers = [];
-        for(i = 0; i<pokemon.length; i++){
-            poke = pokemon[i];
-            image = '/static/SpawnCollector/larger-icons/'+poke['pokeID']+'.png'
-            markers.push(new google.maps.Marker({
-                position: { lat: poke['lat'], lng: poke['long'] },
-                map: map,
-                title: poke['pokeName'],
-                icon: image
-                }))
+       
+        function initMap() {
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: latitude, lng: longitude },
+                zoom: 16
+            });
         }
-      }
+        
 
     </script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBAqdtbKNsmdCRIr6CMwGz__ZJ1w1wA8Ek&callback=initMap"
             async defer></script>
+    <div>
+        <button onclick="spawnPokemon()">Spawn Pokemon</button>
+    </div>
 
+
+    <script>
+        function spawnPokemon(){
+            var markers = [];
+            var xml = new XMLHttpRequest();
+            xml.open("GET", '/getPokemon', false);
+            xml.send(null);
+            pokemonTemp = JSON.parse(xml.responseText);
+            pokemon = JSON.parse(pokemonTemp)
+            console.log(pokemon.length)
+            for(i = 0; i<pokemon.length; i++){
+                poke = pokemon[i];
+                console.log(poke)
+                image = '/static/SpawnCollector/larger-icons/'+poke['pokeID']+'.png'
+                markers.push(new google.maps.Marker({
+                    position: { lat: poke['lat'], lng: poke['long'] },
+                    map: map,
+                    title: poke['pokeName'],
+                    icon: image
+                }))
+            }
+        }
+    </script>
 </body>
 </html>

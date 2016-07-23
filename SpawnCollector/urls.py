@@ -1,7 +1,9 @@
 from django.conf.urls import url
 from . import views
+from SpawnCollector.views import MapView
 
 
 urlpatterns = [
-     url(r'^$',views.GetPokemon, name='getPokemon' )
+     url(r'^$',MapView.as_view()),
+     url(r'^getPokemon$', views.GetPokemon)
      ]

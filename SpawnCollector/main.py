@@ -65,7 +65,7 @@ def Search(location, access_token, api_endpoint, response):
     origin = LatLng.from_degrees(LocationSetter.FLOAT_LAT, LocationSetter.FLOAT_LONG)
     pokeEntry =[]
 
-    for i in range(20):
+    for i in range(1):
         original_lat = LocationSetter.FLOAT_LAT
         original_long = LocationSetter.FLOAT_LONG
         parent = CellId.from_lat_lng(LatLng.from_degrees(LocationSetter.FLOAT_LAT, LocationSetter.FLOAT_LONG)).parent(15)
