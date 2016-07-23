@@ -18,11 +18,11 @@ from Heartbeat import Heartbeat
 parser = SafeConfigParser()
 parser.read('SpawnCollector/config.cfg')
 
-def main(location):
+def LogIn():
+    global pokemons 
     pokemons = json.load(open('SpawnCollector/pokemon.json'))
    
     #location = raw_input("Location: ")
-    LocationSetter.set_location(location)
     
     username = parser.get('login', 'username')
     password = parser.get('login', 'password')
@@ -57,70 +57,75 @@ def main(location):
             print('[+] {}: {}'.format(curr.type, curr.amount))
     else:
         print('[-] Ooops...')
+    return(access_token, api_endpoint, response)
 
+def Search(location, access_token, api_endpoint, response):
+
+    LocationSetter.set_location(location)
     origin = LatLng.from_degrees(LocationSetter.FLOAT_LAT, LocationSetter.FLOAT_LONG)
-    
-    original_lat = LocationSetter.FLOAT_LAT
-    original_long = LocationSetter.FLOAT_LONG
-    parent = CellId.from_lat_lng(LatLng.from_degrees(LocationSetter.FLOAT_LAT, LocationSetter.FLOAT_LONG)).parent(15)
+    pokeEntry =[]
 
-    h = Heartbeat.heartbeat(api_endpoint, access_token, response)
-    hs = [h]
-    seen = set([])
-    for child in parent.children():
-        latlng = LatLng.from_point(Cell(child).get_center())
-        LocationSetter.set_location_coords(latlng.lat().degrees, latlng.lng().degrees, 0)
-        hs.append(Heartbeat.heartbeat(api_endpoint, access_token, response))
-    LocationSetter.set_location_coords(original_lat, original_long, 0)
+    for i in range(20):
+        original_lat = LocationSetter.FLOAT_LAT
+        original_long = LocationSetter.FLOAT_LONG
+        parent = CellId.from_lat_lng(LatLng.from_degrees(LocationSetter.FLOAT_LAT, LocationSetter.FLOAT_LONG)).parent(15)
 
-    visible = []
+        h = Heartbeat.heartbeat(api_endpoint, access_token, response)
+        hs = [h]
+        seen = set([])
+        for child in parent.children():
+            latlng = LatLng.from_point(Cell(child).get_center())
+            LocationSetter.set_location_coords(latlng.lat().degrees, latlng.lng().degrees, 0)
+            hs.append(Heartbeat.heartbeat(api_endpoint, access_token, response))
+        LocationSetter.set_location_coords(original_lat, original_long, 0)
 
-    for hh in hs:
-        for cell in hh.cells:
-            for wild in cell.WildPokemon:
-                hash = wild.SpawnPointId + ':' + str(wild.pokemon.PokemonId)
-                if (hash not in seen):
-                    visible.append(wild)
-                    seen.add(hash)
+        visible = []
 
-    print('')
-    for cell in h.cells:
-        if cell.NearbyPokemon:
-            other = LatLng.from_point(Cell(CellId(cell.S2CellId)).get_center())
+        for hh in hs:
+            for cell in hh.cells:
+                for wild in cell.WildPokemon:
+                    hash = wild.SpawnPointId + ':' + str(wild.pokemon.PokemonId)
+                    if (hash not in seen):
+                        visible.append(wild)
+                        seen.add(hash)
+
+        print('')
+        for cell in h.cells:
+            if cell.NearbyPokemon:
+                other = LatLng.from_point(Cell(CellId(cell.S2CellId)).get_center())
+                diff = other - origin
+                # print(diff)
+                difflat = diff.lat().degrees
+                difflng = diff.lng().degrees
+                direction = (('N' if difflat >= 0 else 'S') if abs(difflat) > 1e-4 else '')  + (('E' if difflng >= 0 else 'W') if abs(difflng) > 1e-4 else '')
+                print("Within one step of %s (%sm %s from you):" % (other, int(origin.get_distance(other).radians * 6366468.241830914), direction))
+                for poke in cell.NearbyPokemon:
+                    print('    (%s) %s' % (poke.PokedexNumber, pokemons[poke.PokedexNumber - 1]['Name']))
+
+        print('') 
+        for poke in visible:
+            other = LatLng.from_degrees(poke.Latitude, poke.Longitude)
             diff = other - origin
             # print(diff)
             difflat = diff.lat().degrees
             difflng = diff.lng().degrees
             direction = (('N' if difflat >= 0 else 'S') if abs(difflat) > 1e-4 else '')  + (('E' if difflng >= 0 else 'W') if abs(difflng) > 1e-4 else '')
-            print("Within one step of %s (%sm %s from you):" % (other, int(origin.get_distance(other).radians * 6366468.241830914), direction))
-            for poke in cell.NearbyPokemon:
-                print('    (%s) %s' % (poke.PokedexNumber, pokemons[poke.PokedexNumber - 1]['Name']))
-
-    print('') 
-    pokeEntry =[]
-    for poke in visible:
-        other = LatLng.from_degrees(poke.Latitude, poke.Longitude)
-        diff = other - origin
-        # print(diff)
-        difflat = diff.lat().degrees
-        difflng = diff.lng().degrees
-        direction = (('N' if difflat >= 0 else 'S') if abs(difflat) > 1e-4 else '')  + (('E' if difflng >= 0 else 'W') if abs(difflng) > 1e-4 else '')
-        print("(%s) %s is visible at (%s, %s) for %s seconds (%sm %s from you)" % (poke.pokemon.PokemonId, pokemons[poke.pokemon.PokemonId - 1]['Name'], poke.Latitude, poke.Longitude, poke.TimeTillHiddenMs / 1000, int(origin.get_distance(other).radians * 6366468.241830914), direction))
+            print("(%s) %s is visible at (%s, %s) for %s seconds (%sm %s from you)" % (poke.pokemon.PokemonId, pokemons[poke.pokemon.PokemonId - 1]['Name'], poke.Latitude, poke.Longitude, poke.TimeTillHiddenMs / 1000, int(origin.get_distance(other).radians * 6366468.241830914), direction))
         
-        pokeDict = {'pokeID': poke.pokemon.PokemonId, 
-                    'pokeName': pokemons[poke.pokemon.PokemonId - 1]['Name'], 
-                    'long':poke.Longitude, 
-                    'lat': poke.Latitude,
-                    'timeLeft':poke.TimeTillHiddenMs}
-        pokeEntry.append(pokeDict)
+            pokeDict = {'pokeID': poke.pokemon.PokemonId, 
+                        'pokeName': pokemons[poke.pokemon.PokemonId - 1]['Name'].encode('ascii','ignore'), 
+                        'long':poke.Longitude, 
+                        'lat': poke.Latitude,
+                        'timeLeft':poke.TimeTillHiddenMs}
+            pokeEntry.append(pokeDict)
 
 
-    print('')
-    walk = Heartbeat.getNeighbors()
-    next = LatLng.from_point(Cell(CellId(walk[2])).get_center())
-    #if raw_input('The next cell is located at %s. Keep scanning? [Y/n]' % next) in {'n', 'N'}:
-    #    break
-    LocationSetter.set_location_coords(next.lat().degrees, next.lng().degrees, 0)
+        print('')
+        walk = Heartbeat.getNeighbors()
+        next = LatLng.from_point(Cell(CellId(walk[2])).get_center())
+        #if raw_input('The next cell is located at %s. Keep scanning? [Y/n]' % next) in {'n', 'N'}:
+        #    break
+        LocationSetter.set_location_coords(next.lat().degrees, next.lng().degrees, 0)
     return pokeEntry
 
 if __name__ == '__main__':
