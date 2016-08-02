@@ -1,4 +1,5 @@
 ﻿<!DOCTYPE html>
+{% load staticfiles %}
 
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -6,6 +7,7 @@
     <title>Greg's Pokemon Mapper</title>
     <meta name="viewport" content="initial-scale=1.0">
     <meta charset="utf-8">
+    <link href="{% static "SpawnCollector/css/bootstrap.min.css"%}" rel="stylesheet">
     <style>
         html, body {
             height: 100%;
@@ -13,56 +15,59 @@
             padding: 0;
         }
 
-        #map {
-            height: 75%;
+        .checkImage{
+            position: relative;
+            width: 100px;
+            height: 100px;
+            float:left;
+            margin-top:10px;
+        }
+        .checkbox{
+            position: relative;
+            bottom:0px;
+            right:0px;
         }
     </style>
 </head>
 <body>
-    
-    <div id="map"></div>
-    <script>
-        var map;
-        var latitude = parseFloat("{{lat}}");
-        var longitude = parseFloat("{{long}}");
-       
-        function initMap() {
-            map = new google.maps.Map(document.getElementById('map'), {
-                center: { lat: latitude, lng: longitude },
-                zoom: 16
-            });
-        }
-        
 
-    </script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBAqdtbKNsmdCRIr6CMwGz__ZJ1w1wA8Ek&callback=initMap"
-            async defer></script>
-    <div>
-        <button onclick="spawnPokemon()">Spawn Pokemon</button>
+
+    <div class="form">
+        <form action="" method="post">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-sm-3">
+
+                </div>
+                <div class="col-sm-6 offset-sm-3 ">
+                    <h1 class="text-center">
+                        Signup for the Pokemon Email Notification Integrated System or P.E.N.I.S.
+                    </h1>
+                    Email: <br />
+                    <input type="text" name="email" /><br />
+                    Location: <br />
+                    <input type="text" name="location" /><br />
+                    Radius: <br />
+                    <input type="number" step="any" name="radius" /><br />
+                    <input type="submit" />
+                    Select which pokemon you don't want. By default all of the below will trigger an email:
+
+                </div>
+            </div>
+            <div class="row">
+                <div>
+
+                    {% for poke in pokeList %}
+                    <div class="col-sm-3 checkImage">
+                        <img src="/static/SpawnCollector/larger-icons/{{poke}}.png" />
+                        <input type="checkbox" name="wanted" class="checkbox" value="{{poke}}" id="{{poke}}" checked />
+                    </div>
+                    {%endfor%}
+
+                </div>
+            </div>
+        </form>
     </div>
 
-
-    <script>
-        function spawnPokemon(){
-            var markers = [];
-            var xml = new XMLHttpRequest();
-            xml.open("GET", '/getPokemon', false);
-            xml.send(null);
-            pokemonTemp = JSON.parse(xml.responseText);
-            pokemon = JSON.parse(pokemonTemp)
-            console.log(pokemon.length)
-            for(i = 0; i<pokemon.length; i++){
-                poke = pokemon[i];
-                console.log(poke)
-                image = '/static/SpawnCollector/larger-icons/'+poke['pokeID']+'.png'
-                markers.push(new google.maps.Marker({
-                    position: { lat: poke['lat'], lng: poke['long'] },
-                    map: map,
-                    title: poke['pokeName'],
-                    icon: image
-                }))
-            }
-        }
-    </script>
 </body>
 </html>

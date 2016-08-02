@@ -123,3 +123,10 @@ USE_TZ = True
 STATIC_URL = '/static/'
 PROJECT_DIR=os.path.dirname(__file__)
 STATIC_ROOT= os.path.join(PROJECT_DIR,'static/')
+
+#Email Settings
+EMAIL_USE_TLS = True
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'keamoke@gmail.com'
+EMAIL_HOST_PASSWORD = '12481632'

@@ -43,7 +43,11 @@ def LogIn():
     if response is not None:
         print('[+] Login successful')
 
-        payload = response.payload[0]
+        payload = None
+        try:
+            payload = response.payload[0]
+        except:
+            print response.payload
         profile = pokemon_pb2.ResponseEnvelop.ProfilePayload()
         profile.ParseFromString(payload)
         print('[+] Username: {}'.format(profile.profile.username))
@@ -60,8 +64,10 @@ def LogIn():
     return(access_token, api_endpoint, response)
 
 def Search(location, access_token, api_endpoint, response):
-
-    LocationSetter.set_location(location)
+    
+    locString = str(location[0]) + ', ' + str(location[1])
+    print locString
+    LocationSetter.set_location(locString)
     origin = LatLng.from_degrees(LocationSetter.FLOAT_LAT, LocationSetter.FLOAT_LONG)
     pokeEntry =[]
 
@@ -71,6 +77,7 @@ def Search(location, access_token, api_endpoint, response):
     parent = CellId.from_lat_lng(LatLng.from_degrees(LocationSetter.FLOAT_LAT, LocationSetter.FLOAT_LONG)).parent(15)
 
     h = Heartbeat.heartbeat(api_endpoint, access_token, response)
+    print dir(h.cells[0].NearbyPokemon)
     hs = [h]
     seen = set([])
     for child in parent.children():
@@ -92,6 +99,7 @@ def Search(location, access_token, api_endpoint, response):
     print('')
     for cell in h.cells:
         if cell.NearbyPokemon:
+            print cell.NearbyPokemon
             other = LatLng.from_point(Cell(CellId(cell.S2CellId)).get_center())
             diff = other - origin
             # print(diff)
@@ -111,7 +119,7 @@ def Search(location, access_token, api_endpoint, response):
         difflng = diff.lng().degrees
         direction = (('N' if difflat >= 0 else 'S') if abs(difflat) > 1e-4 else '')  + (('E' if difflng >= 0 else 'W') if abs(difflng) > 1e-4 else '')
         print("(%s) %s is visible at (%s, %s) for %s seconds (%sm %s from you)" % (poke.pokemon.PokemonId, pokemons[poke.pokemon.PokemonId - 1]['Name'], poke.Latitude, poke.Longitude, poke.TimeTillHiddenMs / 1000, int(origin.get_distance(other).radians * 6366468.241830914), direction))
-        
+         
         pokeDict = {'pokeID': poke.pokemon.PokemonId, 
                     'pokeName': pokemons[poke.pokemon.PokemonId - 1]['Name'].encode('ascii','ignore'), 
                     'long':poke.Longitude, 
@@ -121,11 +129,11 @@ def Search(location, access_token, api_endpoint, response):
 
 
     print('')
-    walk = Heartbeat.getNeighbors()
-    next = LatLng.from_point(Cell(CellId(walk[2])).get_center())
-    #if raw_input('The next cell is located at %s. Keep scanning? [Y/n]' % next) in {'n', 'N'}:
-    #    break
-    LocationSetter.set_location_coords(next.lat().degrees, next.lng().degrees, 0)
+    #walk = Heartbeat.getNeighbors()
+    #next = LatLng.from_point(Cell(CellId(walk[2])).get_center())
+    ##if raw_input('The next cell is located at %s. Keep scanning? [Y/n]' % next) in {'n', 'N'}:
+    ##    break
+    #LocationSetter.set_location_coords(next.lat().degrees, next.lng().degrees, 0)
 
     return pokeEntry
 

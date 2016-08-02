@@ -29,6 +29,8 @@ class LocationSetter:
         geolocator = GoogleV3()
         loc = geolocator.geocode(location_name, timeout = 10)
 
+        
+
         print('[!] Your given location: {}'.format(loc.address.encode('utf-8')))
         print('[!] lat/long/alt: {} {} {}'.format(loc.latitude, loc.longitude, loc.altitude))
         LocationSetter.set_location_coords(loc.latitude, loc.longitude, loc.altitude)

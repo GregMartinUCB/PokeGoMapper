@@ -87,8 +87,8 @@ class Profile:
                 print(p_ret)
                 print("\n\n")
 
-            print("Sleeping for 2 seconds to get around rate-limit.")
-            time.sleep(2)
+            print("Sleeping for 1 seconds to get around rate-limit.")
+            time.sleep(.4)
             return p_ret
         except Exception as e:
             if DEBUG:
