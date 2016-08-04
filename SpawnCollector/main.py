@@ -77,7 +77,6 @@ def Search(location, access_token, api_endpoint, response):
     parent = CellId.from_lat_lng(LatLng.from_degrees(LocationSetter.FLOAT_LAT, LocationSetter.FLOAT_LONG)).parent(15)
 
     h = Heartbeat.heartbeat(api_endpoint, access_token, response)
-    print dir(h.cells[0].NearbyPokemon)
     hs = [h]
     seen = set([])
     for child in parent.children():
@@ -121,6 +120,7 @@ def Search(location, access_token, api_endpoint, response):
         print("(%s) %s is visible at (%s, %s) for %s seconds (%sm %s from you)" % (poke.pokemon.PokemonId, pokemons[poke.pokemon.PokemonId - 1]['Name'], poke.Latitude, poke.Longitude, poke.TimeTillHiddenMs / 1000, int(origin.get_distance(other).radians * 6366468.241830914), direction))
          
         pokeDict = {'pokeID': poke.pokemon.PokemonId, 
+                    'hashID': str(poke.SpawnPointId) + ':' +str(poke.pokemon.PokemonId),
                     'pokeName': pokemons[poke.pokemon.PokemonId - 1]['Name'].encode('ascii','ignore'), 
                     'long':poke.Longitude, 
                     'lat': poke.Latitude,

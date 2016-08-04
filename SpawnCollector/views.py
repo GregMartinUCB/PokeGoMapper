@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from django import forms
 import numpy as np
 import math
+import time
 from geopy.geocoders import GoogleV3
 
 # Create your views here.
@@ -39,41 +40,72 @@ class MapView(View):
 
         
         email = request.POST['email']
+        #get the pokemon wanted from the checkboxes
         wantedPokemon = request.POST.getlist('wanted')
+        #The wanted list is a list of unicode strings, need to convert to ascii and change them to ints
         for i in range(len(wantedPokemon)):
             wantedPokemon[i] = int(wantedPokemon[i].encode('ascii', 'ignore'))
+        
         startLocation =request.POST['location']
         radius = request.POST['radius']
-        radius =float(radius.encode('ascii', 'ignore'))
+        radius =float(radius.encode('ascii', 'ignore')) #Again unicode
         grid = GetSearchGrid(startLocation, radius)
         print 'grid: ' + str(grid)
         print 'Wanted Pokemon: ' + str(wantedPokemon)
 
-
-
         foundPokemon = []
-        for x in grid:
-            for y in x:
-                pokeList = Search(y, MapView.accessToken, MapView.apiEndpoint, MapView.response)
-                for pok in pokeList:
-                    foundPokemon.append(pok)
+        seen = []
+        sent = []
 
-        pokemonToSend = []
-        for poke in foundPokemon:
-            if int(poke['pokeID']) in wantedPokemon:
-                pokemonToSend.append(poke)
-        if len(pokemonToSend)>=1:
-            SendAlert(pokemonToSend, email)
+        #Set the time for a hour
+        now = time.time()
+        future = now + 3600
 
-        print pokemonToSend
-        print foundPokemon
+
+        while time.time() < future:
+            #grid is a widthXwidthX2 Tensor. The first two dimensions is a grid of points, the third holds the
+            #latitude and longitude for each point.
+            for x in grid:
+                #x is widthx2
+                pokemonToSend = []
+                for y in x:
+                    #y is a vector of length 2 (AKA Long and Lat).
+                    pokeList = Search(y, MapView.accessToken, MapView.apiEndpoint, MapView.response)
+                    
+                    #This checks for if previous iterations have seen this particular pokemon.
+                    #The api this is based on used this exact method, so I'm using it.
+                    #hashID is just 'spawnPointId:pokemonId' should be relatively unique.
+                    for pok in pokeList:
+                        if pok['hashID'] not in seen:
+                            foundPokemon.append(pok)
+                            seen.append(pok['hashID'])
+
+                            #Loop Through all pokemon found this loop and if it is a wanted pokemon and the last
+                            #iteration did not find this then add it to the pokemon to send and record it
+                            #as having been sent
+                            if (int(pok['pokeID']) in wantedPokemon)and (pok['hashID'] not in sent):
+                                pokemonToSend.append(pok)
+                                sent.append(pok['hashID'])
+            
+                #Obvious check to see if anything needs to be sent
+                if len(pokemonToSend)>=1:
+                    SendAlert(pokemonToSend, email)
+            
+                    
+                    
+            
+           
+            
+
+            print pokemonToSend
+            print foundPokemon
        
 
         return HttpResponse("Thanks for signing up")
 
 def GetSearchGrid(location, radius):
     #width^2 is the number of points searched
-    width = 5
+    width = 6
     #If width equals 5 we want a range starting from -2 to 2 for the offsets
     numIncrements = int(math.floor(width/2))
     offset = np.linspace(-numIncrements, numIncrements, num = width)

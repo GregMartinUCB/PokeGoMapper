@@ -1,6 +1,14 @@
+amqp==1.4.9
+anyjson==0.3.3
+billiard==3.3.0.23
+celery==3.1.23
 Django==1.9.8
 future==0.15.2
 geopy==1.11.0
+kombu==3.0.35
+numpy==1.11.1
 protobuf==2.6.1
+pytz==2016.6.1
+redis==2.10.5
 requests==2.10.0
 s2sphere==0.2.4
